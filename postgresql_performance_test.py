@@ -198,9 +198,9 @@ class DatabasePerformanceTester:
 def main():
     # Database connection parameters
     db_params = {
-        'dbname': 'your_database_name',
-        'user': 'your_username',
-        'password': 'your_password',
+        'dbname': 'defaultdb',
+        'user': 'avnadmin',
+        'password': 'AVNS_O3z9kbbw2LFc1tKyV82',
         'host': 'localhost',
         'port': '5432'
     }
