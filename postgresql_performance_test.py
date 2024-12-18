@@ -4,7 +4,7 @@ import string
 import time
 from faker import Faker
 
-class DatabasePerformanceTester:
+class IndexedDatabasePerformanceTester:
     def __init__(self, db_params):
         """
         Initialize database connection parameters
@@ -22,9 +22,9 @@ class DatabasePerformanceTester:
         """
         return psycopg2.connect(**self.db_params)
 
-    def create_table(self):
+    def create_table_with_indexes(self):
         """
-        Create a test table without any indexes
+        Create a test table with indexes on commonly queried columns
         """
         with self.create_connection() as conn:
             with conn.cursor() as cur:
@@ -37,6 +37,10 @@ class DatabasePerformanceTester:
                     age INT,
                     description TEXT
                 );
+                
+                -- Create indexes on commonly queried columns
+                CREATE INDEX idx_performance_test_age ON performance_test (age);
+                CREATE INDEX idx_performance_test_name ON performance_test (name);
                 """)
                 conn.commit()
 
@@ -93,15 +97,15 @@ class DatabasePerformanceTester:
                 start_time = time.time()
                 
                 # Different select scenarios
-                # 1. Select by ID
+                # 1. Select by ID (primary key is already indexed)
                 cur.execute("SELECT * FROM performance_test WHERE id = %s", 
                             (random.randint(1, num_records),))
                 
-                # 2. Select with condition
+                # 2. Select with condition on indexed age column
                 cur.execute("SELECT * FROM performance_test WHERE age > %s LIMIT 100", 
                             (random.randint(18, 50),))
                 
-                # 3. Select with text search
+                # 3. Select with text search on indexed name column
                 cur.execute("SELECT * FROM performance_test WHERE name LIKE %s", 
                             (f'%{random.choice(string.ascii_uppercase)}%',))
                 
@@ -167,10 +171,10 @@ class DatabasePerformanceTester:
         results = {}
         
         for count in record_counts:
-            print(f"\nTesting with {count} records:")
+            print(f"\nTesting with {count} records (WITH INDEXES):")
             
-            # Recreate table and insert data
-            self.create_table()
+            # Recreate table with indexes and insert data
+            self.create_table_with_indexes()
             insert_time = self.measure_insert_performance(count)
             print(f"Insert Time: {insert_time:.4f} seconds")
             
@@ -209,7 +213,7 @@ def main():
     record_counts = [1000, 10000, 100000, 1000000]
     
     # Create performance tester
-    tester = DatabasePerformanceTester(db_params)
+    tester = IndexedDatabasePerformanceTester(db_params)
     
     # Run performance tests
     results = tester.run_performance_tests(record_counts)
